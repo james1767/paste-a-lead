@@ -95,8 +95,8 @@ Return STRICT JSON only in exactly this shape:
 }
 
 Scoring guidance:
-- If a lead is asking about a service (e.g. “what do you offer”, “can you help”), treat intent as moderate even if details are missing
-- If the business type is clearly outside your target market, classify as Not Qualified regardless of intent
+- If the lead does not clearly relate to your target type of client or service (e.g. unclear business, irrelevant niche, or generic curiosity), treat relevance as low and lean towards Not Qualified unless there is strong buying intent.
+- Very short curiosity messages (e.g. “what do you do?”) should be treated as low intent and low relevance unless supported by clear business context.
 - Avoid over-penalising leads that show genuine interest but lack detail
 
 Rules for output:
