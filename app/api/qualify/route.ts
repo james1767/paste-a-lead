@@ -94,10 +94,25 @@ Return STRICT JSON only in exactly this shape:
   "suggestedReply": "short reply"
 }
 
-Scoring guidance:
-- If the lead does not clearly relate to your target type of client or service (e.g. unclear business, irrelevant niche, or generic curiosity), treat relevance as low and lean towards Not Qualified unless there is strong buying intent.
-- Very short curiosity messages (e.g. “what do you do?”) should be treated as low intent and low relevance unless supported by clear business context.
-- Avoid over-penalising leads that show genuine interest but lack detail
+Strict qualification rules:
+
+- Very short curiosity messages (e.g. “what do you do?”, “how does this work?”) should be treated as low intent AND low relevance, and usually classified as Not Qualified
+
+- If a message does not include:
+  - a business context
+  - a problem
+  - or a clear interest in solving something
+
+  then it should NOT be treated as a meaningful lead
+
+- If the business type is outside your likely target client (or unclear), reduce relevance significantly and lean towards Not Qualified unless there is strong buying intent
+
+- Only use “Needs More Info” when:
+  - the lead is clearly relevant AND
+  - there is a believable commercial opportunity
+  - but key details are missing
+
+- Do not default to “Needs More Info” for weak or vague messages — use “Not Qualified” instead when appropriate
 
 Rules for output:
 - reasons: 2 to 4 short, specific points (no fluff)
