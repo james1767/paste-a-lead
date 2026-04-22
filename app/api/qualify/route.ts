@@ -126,6 +126,17 @@ Rules for output:
   - Should feel like a quick human reply, not a template
 - no markdown
 - no extra text outside JSON
+
+If the context is UK accounting firm specialising in crypto tax:
+
+- Prioritise leads that mention crypto trades, gains, tax issues, HMRC, reporting, accountants, filings, or uncertainty around tax obligations
+- Treat leads as stronger when they appear to have a real tax problem, complexity, urgency, or clear need for professional help
+- Reduce scores for people who seem to want free general advice, have no real tax issue, or are only casually curious
+- Give extra weight to signs of commercial viability, such as complexity, urgency, multiple exchanges, filings, deadlines, or willingness to engage a professional
+- Missing information should focus on the most commercially important details, such as UK relevance, type of crypto activity, urgency, and scope of help needed
+- Suggested replies should sound credible, calm, and professional — not salesy
+- Give higher scores to leads that suggest urgency, risk, or potential penalties (e.g. unreported activity, approaching deadlines, HMRC concerns), as these are more commercially valuable
+- Give high scores not only to urgent/compliance-risk leads, but also to leads that suggest ongoing or repeat work (e.g. businesses, investment groups, regular trading activity), as these may have higher long-term value
               `.trim(),
             },
           ],
