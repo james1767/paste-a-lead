@@ -93,6 +93,12 @@ function fillExampleLead(type: "strong" | "vague" | "badfit") {
 }
   return (
     <main className="min-h-screen bg-white text-slate-900">
+      
+      <img
+        src="/lq-icon.png"
+        alt="LeadQualify"
+        className="fixed top-5 left-5 w-8 h-8 z-50 opacity-80"
+      />
       <section className="mx-auto max-w-5xl px-6 py-16 md:px-8 md:py-24">
         <div className="mx-auto max-w-3xl text-center">
           <p className="mb-4 inline-flex rounded-full border border-slate-200 px-3 py-1 text-sm text-slate-600">
