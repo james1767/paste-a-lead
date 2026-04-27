@@ -34,6 +34,7 @@ export async function POST(request: Request) {
 
     const response = await client.responses.create({
       model: "gpt-5.4",
+      temperature: 0,
       input: [
         {
           role: "developer",
@@ -137,6 +138,24 @@ If the context is UK accounting firm specialising in crypto tax:
 - Suggested replies should sound credible, calm, and professional — not salesy
 - Give higher scores to leads that suggest urgency, risk, or potential penalties (e.g. unreported activity, approaching deadlines, HMRC concerns), as these are more commercially valuable
 - Give high scores not only to urgent/compliance-risk leads, but also to leads that suggest ongoing or repeat work (e.g. businesses, investment groups, regular trading activity), as these may have higher long-term value
+
+Consistency rules:
+
+- The same input should always produce the same classification and very similar score
+
+- Do not reinterpret the same message differently between evaluations
+
+- If input is ambiguous, choose a consistent interpretation and stick to it
+
+- Do not vary scoring logic between runs
+
+Scoring consistency guidance:
+
+- Vague but relevant crypto enquiries = 55 to 70
+
+- Clear tax issue + intent = 80 to 95
+
+- No real problem / unrealistic / irrelevant = 0 to 40
               `.trim(),
             },
           ],
