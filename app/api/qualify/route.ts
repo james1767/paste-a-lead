@@ -1,6 +1,21 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type",
+};
+
+const postHeaders = {
+  "Content-Type": "application/json",
+  ...corsHeaders,
+};
+
+export function OPTIONS() {
+  return new Response(null, { status: 200, headers: corsHeaders });
+}
+
 const client = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
@@ -21,14 +36,14 @@ export async function POST(request: Request) {
     if (!leadText || typeof leadText !== "string") {
       return NextResponse.json(
         { error: "Lead text is required." },
-        { status: 400 }
+        { status: 400, headers: postHeaders}
       );
     }
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: "OPENAI_API_KEY is missing from .env.local" },
-        { status: 500 }
+        { status: 500, headers: postHeaders}
       );
     }
 
@@ -177,7 +192,7 @@ Scoring consistency guidance:
     if (!text) {
       return NextResponse.json(
         { error: "The model returned an empty response." },
-        { status: 500 }
+        { status: 500, headers: postHeaders}
       );
     }
 
@@ -191,7 +206,7 @@ Scoring consistency guidance:
           error: "The model returned invalid JSON.",
           raw: text,
         },
-        { status: 500 }
+        { status: 500, headers: postHeaders}
       );
     }
 
@@ -204,17 +219,17 @@ Scoring consistency guidance:
     ) {
       return NextResponse.json(
         { error: "The model returned an unexpected response shape." },
-        { status: 500 }
+        { status: 500, headers: postHeaders}
       );
     }
 
-    return NextResponse.json(parsed);
+    return NextResponse.json(parsed, { headers: postHeaders});
   } catch (error) {
     console.error("Qualification error:", error);
 
     return NextResponse.json(
       { error: "Unable to process this lead right now." },
-      { status: 500 }
+      { status: 500, headers: postHeaders}
     );
   }
 }
