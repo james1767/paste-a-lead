@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Terms of service for Paste a Lead — the rules and disclaimers that apply when you use the app.",
 };
 
-const CONTACT_EMAIL = "support@example.com";
+const CONTACT_EMAIL = "james@leadqualify.co.uk";;
 const LAST_UPDATED = "6 May 2026";
 
 export default function TermsPage() {
