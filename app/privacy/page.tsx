@@ -6,7 +6,7 @@ export const metadata: Metadata = {
     "Privacy policy for Paste a Lead — how we handle the lead messages you paste into the app.",
 };
 
-const CONTACT_EMAIL = "james@leadqualify.co.uk";;
+const CONTACT_EMAIL = "james@leadqualify.co.uk"
 const LAST_UPDATED = "6 May 2026";
 
 export default function PrivacyPage() {
@@ -45,11 +45,14 @@ export default function PrivacyPage() {
             </h2>
             <p className="mt-3">
               The text you paste into the app is the only content we process to
-              generate a result. Please do not paste content you are not
-              comfortable sharing — for example, sensitive personal data,
-              payment details, passwords, or confidential business information.
-              You are responsible for ensuring you have the right to share any
-              message you paste.
+              generate a result. Lead messages will typically contain basic
+              personal data — for example, the sender&rsquo;s name, email
+              address, phone number, and the content of their enquiry — and the
+              app is designed with this in mind. Please do not paste content
+              you are not comfortable sharing — for example, payment details,
+              passwords, government identifiers, or confidential business
+              information. You are responsible for ensuring you have the right
+              to share any message you paste.
             </p>
           </section>
 
@@ -62,10 +65,14 @@ export default function PrivacyPage() {
               to a third-party AI service (such as a large language model
               provider) for processing. That provider processes the text to
               return a response and may apply its own data-handling policies.
+              We recommend reviewing the privacy policies of any third-party
+              services involved so you understand how they handle the data
+              they receive.
             </p>
             <p className="mt-3">
-              We do not use your pasted content to train AI models, and we do
-              not sell your data to third parties.
+              We do not use your pasted content to train AI models, we do not
+              sell your data to third parties, and we do not use your data for
+              marketing purposes.
             </p>
           </section>
 
@@ -76,7 +83,7 @@ export default function PrivacyPage() {
             <p className="mt-3">
               We aim to keep data storage to a minimum. The text you paste is
               processed to generate a result and is not retained on our servers
-              beyond what is required to return that result. Some recent
+              beyond what is reasonably required to provide the service. Some recent
               activity may be stored locally on your device so you can review
               past results — this stays on your device and you can clear it at
               any time.

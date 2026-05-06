@@ -65,8 +65,19 @@ export default function TermsPage() {
                 that is unlawful, infringing, or harmful.
               </li>
               <li>
-                Submit sensitive personal data, payment details, credentials,
-                or confidential information you are not authorised to share.
+                Submit highly sensitive data, such as payment or card details,
+                login credentials, government identifiers, health records, or
+                confidential information you are not authorised to share.
+                Typical lead messages may naturally include basic personal
+                data (for example a name, email address, phone number, or the
+                content of an enquiry); this is expected, and our{" "}
+                <a
+                  href="/privacy"
+                  className="font-medium text-slate-900 underline underline-offset-4 hover:opacity-80"
+                >
+                  Privacy Policy
+                </a>{" "}
+                explains how that data is handled.
               </li>
               <li>
                 Attempt to reverse engineer, disrupt, or interfere with the
@@ -133,8 +144,7 @@ export default function TermsPage() {
               7. Limitation of liability
             </h2>
             <p className="mt-3">
-              To the fullest extent permitted by law, Paste a Lead and its
-              operators are not liable for any indirect, incidental, special,
+              To the fullest extent permitted by law, Paste a Lead and its owner/operator are not liable for any indirect, incidental, special,
               consequential, or punitive damages, or for any loss of profits,
               revenue, data, goodwill, or business opportunities, arising out
               of or related to your use of the app or any decision made using
