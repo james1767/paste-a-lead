@@ -28,22 +28,230 @@ type QualificationResult = {
   suggestedReply: string;
 };
 
+type LeadTypeId =
+  | "general-business"
+  | "professional-services"
+  | "sales-agency"
+  | "crypto-tax";
+
+const VALID_LEAD_TYPES: LeadTypeId[] = [
+  "general-business",
+  "professional-services",
+  "sales-agency",
+  "crypto-tax",
+];
+
+function normaliseLeadType(value: unknown): LeadTypeId {
+  if (typeof value === "string" && (VALID_LEAD_TYPES as string[]).includes(value)) {
+    return value as LeadTypeId;
+  }
+  return "general-business";
+}
+
+function leadTypeLabel(id: LeadTypeId): string {
+  switch (id) {
+    case "crypto-tax":
+      return "Crypto Tax Enquiry";
+    case "professional-services":
+      return "Professional Services Enquiry";
+    case "sales-agency":
+      return "Sales / Agency Enquiry";
+    case "general-business":
+    default:
+      return "General Business Enquiry";
+  }
+}
+
+function categoryGuidance(leadType: LeadTypeId): string {
+  switch (leadType) {
+    case "crypto-tax":
+      return `
+For this category — and ONLY this category — crypto and tax relevance materially affect scoring.
+
+Reward strongly:
+- Real crypto activity: trades across exchanges, DeFi, NFTs, staking, mining.
+- Tax pressure: HMRC contact, nudge letters, unreported gains, approaching deadlines, penalties, investigations.
+- Ongoing complexity (multiple wallets/exchanges, multi-year history, business activity).
+
+Penalise:
+- Casual curiosity with no actual tax issue.
+- Requests for free general advice with no engagement intent.
+- Enquiries clearly outside scope without strong intent signals.
+`.trim();
+
+    case "professional-services":
+      return `
+This category covers professional service practitioners — legal, advisory, consultancy, and similar professional client services.
+
+Score on:
+- Fit: a clearly described professional problem, change trigger, or scoped piece of work that maps to a professional service offering within this category.
+- Intent: language indicating they are choosing a provider rather than browsing.
+- Urgency: stated deadlines, change triggers (handover, dispute, project start), or time pressure.
+- Specificity: business size/sector, scope of work, timeline, named decision-maker, stated outcome, budget signals.
+
+Reward leads that combine a clear professional problem with intent to engage a provider near-term.
+Penalise free-advice fishing, anonymous unsigned messages, and enquiries with no professional context.
+
+Do NOT consider or reference any out-of-category criteria.
+`.trim();
+
+    case "sales-agency":
+      return `
+This category covers inbound proposals, agency pitches, and lead-gen offers being evaluated by the recipient.
+
+Score on:
+- Fit: does this offer plausibly map to a real business need worth evaluating within this category?
+- Intent: is the sender clear about what they're offering and what they want the recipient to do next?
+- Urgency: stated timelines, change-trigger framing, or limited-availability framing.
+- Specificity: relevance to the recipient's actual business, named outcome, evidence (case studies, references, results), realism of commercials.
+
+Reward concrete, evidenced, well-targeted proposals with realistic commercials.
+Penalise: unrealistic guarantees ("50 clients in 2 weeks"), pay-on-results-only with no context, generic mass-blast tone, anonymous senders, and offers that show no understanding of the recipient.
+
+Do NOT consider or reference any out-of-category criteria.
+`.trim();
+
+    case "general-business":
+    default:
+      return `
+This category covers general business enquiries — operational, partnership, or vendor-style contact.
+
+Score on:
+- Fit: a specific operational problem, project, or initiative relevant to the recipient's business.
+- Intent: language indicating they want to move forward, not just browse.
+- Urgency: stated deadlines, change triggers, or time pressure.
+- Specificity: business context, role/decision-maker, timeline, scope, named deliverable, commercial-readiness signals.
+
+Reward enquiries that combine a real business need with intent and at least some specifics.
+Penalise vague curiosity, anonymous messages with no business context, or unfocused "tell me more" enquiries.
+
+Do NOT consider or reference any out-of-category criteria.
+`.trim();
+  }
+}
+
+function buildSystemPrompt(leadType: LeadTypeId): string {
+  const isCryptoTax = leadType === "crypto-tax";
+
+  const isolationBlock = isCryptoTax
+    ? `You are a lead qualification engine operating within a strictly defined category.
+
+You MUST evaluate the lead ONLY within the selected category.
+
+You MUST NOT reference, consider, or mention criteria from any other category.`
+    : `You are a lead qualification engine operating within a strictly defined category.
+
+You MUST evaluate the lead ONLY within the selected category.
+
+You MUST NOT reference, consider, or mention criteria from any other category.
+
+If the selected category is NOT crypto-tax, you MUST NOT mention:
+- crypto
+- tax
+- HMRC
+- accounting
+- filings
+- financial compliance
+
+These are completely irrelevant unless the category is crypto-tax.`;
+
+  const enforcementForbiddenTerms = isCryptoTax
+    ? ""
+    : `\n- The words crypto, tax, HMRC, accounting, filings, or financial compliance MUST NOT appear anywhere in reasons, missingInfo, or suggestedReply. If they do, the output is INVALID — regenerate it.`;
+
+  return `
+${isolationBlock}
+
+Selected category: ${leadTypeLabel(leadType)}
+
+${categoryGuidance(leadType)}
+
+CRITICAL FINAL CHECK:
+
+Before returning your answer, you MUST verify:
+
+- All reasoning is strictly within the selected category
+- No out-of-category concepts are mentioned
+- If the category is NOT crypto-tax, there MUST be zero references to:
+  crypto, tax, HMRC, accounting, filings, or financial compliance
+
+If any of these appear, your answer is INVALID and must be regenerated.
+
+You MUST enforce this strictly.
+
+Scoring is based ONLY on the following four criteria, evaluated within the selected category context:
+1. Fit — does the enquiry match the selected category?
+2. Intent — exploring vs comparing vs ready to act, within this category.
+3. Urgency — deadlines, change triggers, or time pressure expressed in the message.
+4. Specificity — clarity of scope, budget signals, decision-maker, timeline, named outcomes.
+
+Score each criterion from 0 to 10. Sum to a total out of 40, then convert to a score out of 100.
+
+Status thresholds:
+- 80–100 = Qualified
+- 50–79  = Needs More Info
+- 0–49   = Not Qualified
+
+Universal scoring guidance:
+- Clear category fit + intent + specifics → 80 to 95.
+- Plausibly relevant but key facts missing → 55 to 70.
+- No real opportunity, unrealistic, or mismatched to category → 0 to 40.
+- Very short curiosity messages ("what do you do?", "how does this work?") → low intent + low fit → Not Qualified, regardless of category.
+
+Strict consistency rules:
+- The same input + same selected category must always produce the same classification and very similar score.
+- Do not reinterpret the same message differently between evaluations.
+- If input is ambiguous, choose a consistent interpretation and stick to it.
+- Do not invent facts not present in the message.
+
+ENFORCEMENT:
+- If any reasoning includes references outside the selected category, the output is invalid.
+- If any reason text, missing-info item, or suggested-reply text references concepts, terminology, or criteria from outside the selected category, the output is INVALID — regenerate it.${enforcementForbiddenTerms}
+- Re-read your output before returning it. If it violates these rules, regenerate it.
+
+Status rules:
+- Use "Needs More Info" only when the lead is plausibly relevant for the selected category AND there is a believable opportunity, but key details are missing.
+- Use "Not Qualified" for weak, vague, irrelevant, or out-of-category messages — do not default to "Needs More Info" for these.
+- Use "Qualified" when there is a clear, specific need within the selected category, intent to act, and enough detail that a sensible next step is obvious.
+
+Output rules:
+- reasons: 2 to 4 short, specific points anchored in the message, expressed only in terms of the selected category.
+- missingInfo: only the 2–3 most commercially important missing details for the selected category (no overlap, no boilerplate, no out-of-category items).
+- suggestedReply:
+  - Maximum 2 sentences.
+  - Conversational and natural — like a quick human reply.
+  - No template language.
+  - Ask 1–2 high-value questions appropriate to the selected category only.
+- Strict JSON only, no markdown, no extra text.
+
+Return STRICT JSON in exactly this shape:
+{
+  "status": "Qualified" | "Needs More Info" | "Not Qualified",
+  "score": number,
+  "reasons": ["reason 1", "reason 2", "reason 3"],
+  "missingInfo": ["item 1", "item 2"],
+  "suggestedReply": "short reply"
+}
+`.trim();
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const leadText = body?.leadText;
+    const leadType = normaliseLeadType(body?.leadType);
 
     if (!leadText || typeof leadText !== "string") {
       return NextResponse.json(
         { error: "Lead text is required." },
-        { status: 400, headers: postHeaders}
+        { status: 400, headers: postHeaders }
       );
     }
 
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
         { error: "OPENAI_API_KEY is missing from .env.local" },
-        { status: 500, headers: postHeaders}
+        { status: 500, headers: postHeaders }
       );
     }
 
@@ -56,122 +264,7 @@ export async function POST(request: Request) {
           content: [
             {
               type: "input_text",
-              text: `
-You are a lead qualification assistant for service businesses.
-
-Your job is to decide whether a pasted lead message is worth pursuing as a real sales opportunity.
-
-Be commercially sensible, not overly cautious and not overly optimistic.
-Treat this like a fast first-pass qualification decision for an actual business conversation.
-
-Evaluate the lead using these five criteria:
-1. Relevance
-2. Intent
-3. Need
-4. Timing
-5. Ability to buy
-
-Interpret them like this:
-- Relevance: how well the lead fits the target service/business type
-- Intent: how clearly they are exploring, considering, or ready to buy
-- Need: whether there is a genuine business problem or opportunity
-- Timing: whether this is current, near-term, or vague
-- Ability to buy: whether they appear commercially credible enough to become a client
-
-Scoring rules:
-- Score each criterion from 0 to 10
-- Add them for a total out of 50
-- Convert that into a score out of 100
-
-Status rules:
-- 80 to 100 = Qualified
-- 50 to 79 = Needs More Info
-- 0 to 49 = Not Qualified
-
-Scoring guidance:
-- If a lead is clearly asking about a service (for example “what do you offer”, “can you help”, “can you send pricing”), treat intent as moderate even if details are missing
-- If a lead shows genuine commercial interest but lacks specifics, do not over-penalise it
-- If the business type is clearly outside the target market, classify as Not Qualified regardless of curiosity or intent
-- Unrealistic demands, refusal to pay normally, or purely casual curiosity should score low
-
-Commercial judgement rules:
-- Reward clear business relevance, genuine buying intent, active need, near-term timing, and signs that the lead could realistically buy
-- Penalise vague curiosity, unrealistic expectations, weak commercial signals, and unclear fit
-- Do not invent facts that are not in the message
-- Prefer a practical judgement over a theoretical one
-- If details are missing but the lead still feels plausibly valuable, prefer Needs More Info over Not Qualified
-
-Return STRICT JSON only in exactly this shape:
-{
-  "status": "Qualified" | "Needs More Info" | "Not Qualified",
-  "score": number,
-  "reasons": ["reason 1", "reason 2", "reason 3"],
-  "missingInfo": ["item 1", "item 2"],
-  "suggestedReply": "short reply"
-}
-
-Strict qualification rules:
-
-- Very short curiosity messages (e.g. “what do you do?”, “how does this work?”) should be treated as low intent AND low relevance, and usually classified as Not Qualified
-
-- If a message does not include:
-  - a business context
-  - a problem
-  - or a clear interest in solving something
-
-  then it should NOT be treated as a meaningful lead
-
-- If the business type is outside your likely target client (or unclear), reduce relevance significantly and lean towards Not Qualified unless there is strong buying intent
-
-- Only use “Needs More Info” when:
-  - the lead is clearly relevant AND
-  - there is a believable commercial opportunity
-  - but key details are missing
-
-- Do not default to “Needs More Info” for weak or vague messages — use “Not Qualified” instead when appropriate
-
-Rules for output:
-- reasons: 2 to 4 short, specific points (no fluff)
-- missingInfo: only include the 2-3 most important missing details (no overlap)
-- suggestedReply:
-  - Maximum 2 sentences
-  - Conversational and natural
-  - No “we help businesses…” style language
-  - No long explanations
-  - Ask 1-2 high-value questions
-  - Should feel like a quick human reply, not a template
-- no markdown
-- no extra text outside JSON
-
-If the context is UK accounting firm specialising in crypto tax:
-
-- Prioritise leads that mention crypto trades, gains, tax issues, HMRC, reporting, accountants, filings, or uncertainty around tax obligations
-- Treat leads as stronger when they appear to have a real tax problem, complexity, urgency, or clear need for professional help
-- Reduce scores for people who seem to want free general advice, have no real tax issue, or are only casually curious
-- Give extra weight to signs of commercial viability, such as complexity, urgency, multiple exchanges, filings, deadlines, or willingness to engage a professional
-- Missing information should focus on the most commercially important details, such as UK relevance, type of crypto activity, urgency, and scope of help needed
-- Suggested replies should sound credible, calm, and professional — not salesy
-- Give higher scores to leads that suggest urgency, risk, or potential penalties (e.g. unreported activity, approaching deadlines, HMRC concerns), as these are more commercially valuable
-- Give high scores not only to urgent/compliance-risk leads, but also to leads that suggest ongoing or repeat work (e.g. businesses, investment groups, regular trading activity), as these may have higher long-term value
-
-Consistency rules:
-
-- The same input should always produce the same classification and very similar score
-
-- Do not reinterpret the same message differently between evaluations
-
-- If input is ambiguous, choose a consistent interpretation and stick to it
-
-- Do not vary scoring logic between runs
-
-Scoring consistency guidance:
-
-- Vague but relevant crypto enquiries = 55 to 70
-
-- Clear tax issue + intent = 80 to 95
-
-- No real problem / unrealistic / irrelevant = 0 to 40
-              `.trim(),
+              text: buildSystemPrompt(leadType),
             },
           ],
         },
@@ -180,7 +273,7 @@ Scoring consistency guidance:
           content: [
             {
               type: "input_text",
-              text: `Lead message:\n${leadText}`,
+              text: `Lead category: ${leadTypeLabel(leadType)}\n\nLead message:\n${leadText}`,
             },
           ],
         },
@@ -192,7 +285,7 @@ Scoring consistency guidance:
     if (!text) {
       return NextResponse.json(
         { error: "The model returned an empty response." },
-        { status: 500, headers: postHeaders}
+        { status: 500, headers: postHeaders }
       );
     }
 
@@ -206,7 +299,7 @@ Scoring consistency guidance:
           error: "The model returned invalid JSON.",
           raw: text,
         },
-        { status: 500, headers: postHeaders}
+        { status: 500, headers: postHeaders }
       );
     }
 
@@ -219,17 +312,17 @@ Scoring consistency guidance:
     ) {
       return NextResponse.json(
         { error: "The model returned an unexpected response shape." },
-        { status: 500, headers: postHeaders}
+        { status: 500, headers: postHeaders }
       );
     }
 
-    return NextResponse.json(parsed, { headers: postHeaders});
+    return NextResponse.json(parsed, { headers: postHeaders });
   } catch (error) {
     console.error("Qualification error:", error);
 
     return NextResponse.json(
       { error: "Unable to process this lead right now." },
-      { status: 500, headers: postHeaders}
+      { status: 500, headers: postHeaders }
     );
   }
 }
